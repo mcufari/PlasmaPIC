@@ -1,0 +1,4 @@
+*.o
+plasma
+*.out
+testLapack.cc
