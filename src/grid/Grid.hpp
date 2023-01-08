@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string>
 #include <unordered_map>
-
+#include "mkl.h"
 template<int dim = 0>
 class Grid{
 public:
@@ -19,13 +19,15 @@ template<> class Grid<1>{
     Grid(int NPoints, double dx, double lBoundary, std::string boundCondition);
   
     void vertexInfoTraverse();
-    
+    void poissonSolver();
     std::unordered_map<int, GridVertex<1>*> indexVertexMap;
 
     int NP;
     double dx;
     double lBound;
     double rBound;
+    double* poissonMatrix;
+    int* ipiv;
     std::string boundaryCondition;
 
     

@@ -1,5 +1,5 @@
-CXX = g++
-CXXFLAGS = -g 
+CXX = icc
+CXXFLAGS = -g -qmkl
 
 Particle.o : Particle.cpp Particle.hpp
 	$(CXX) -o $@ Particle.cpp $(CXXFLAGS) 
