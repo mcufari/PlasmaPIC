@@ -13,7 +13,7 @@ int main(){
     //Dump info
     //Dump closing remarks
     //End
-    const int Nparticles = 10;
+    const int Nparticles = 100;
     const double tMax = 0.1;
     Grid<1> g(101, 0.01, 0);
     

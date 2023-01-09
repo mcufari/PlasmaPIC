@@ -13,6 +13,7 @@ Grid<1>::Grid(int NPoints, double dx, double lBoundary) : NP(NPoints), dx(dx), l
     EfieldValues = (double*) calloc(NP, sizeof(double));
     BfieldValues = (double*) calloc(NP, sizeof(double));
     chargeDensity = (double*) calloc(NP, sizeof(double));
+    timestep = 0;
     phi = (double*) calloc(NP, sizeof(double));
     dt = 0.1 * dx;
     for(int i = 0; i < NPoints; i++){
@@ -63,6 +64,7 @@ boundaryCondition(boundCondition)
     EfieldValues = (double*) calloc(NP, sizeof(double));
     BfieldValues = (double*) calloc(NP, sizeof(double));
     chargeDensity = (double*) calloc(NP, sizeof(double));
+    timestep = 0;
     phi = (double*) calloc(NP, sizeof(double));
     dt = 0.1*dx;
     for(int i = 0; i < NPoints; i++){
@@ -101,23 +103,28 @@ boundaryCondition(boundCondition)
 
 void Grid<1>::vertexInfoTraverse(){
     std::ofstream ofile;
-    ofile.open("gridQuants.txt");
+    std::string filename = "dumps/gridQuants" + std::to_string(timestep) + ".txt";
+    ofile.open(filename);
     ofile << "gridPosits " << "chargeDensity " << "EFieldValues "  << "phi" << std::endl;
     for(int i = 0; i < NP; i++){
         ofile << gridLocations[i] << " ";
         ofile << chargeDensity[i] << " ";
-        ofile << EfieldValues[i] << std::endl;
+        ofile << EfieldValues[i] << " ";
         ofile << phi[i] << std::endl;
     }
     ofile.close();
 }
 
 void Grid<1>::particleInfoTraverse(Particle<1>* pList, int NParticles){
-    std::cout << "posits " << "vels " << std::endl;
+    std::ofstream ofile;
+    std::string filename = "dumps/particleProps" + std::to_string(timestep) + ".txt";
+    ofile.open(filename);
+    ofile << "posits " << "vels " << std::endl;
     for(int i = 0; i < NParticles; i++){
-        std::cout << pList[i].position << " ";
-        std::cout << pList[i].velocity << std::endl;
+        ofile << pList[i].position << " ";
+        ofile << pList[i].velocity << std::endl;
     }
+    ofile.close();
 }
 
 void Grid<1>::poissonSolver(){
@@ -179,8 +186,10 @@ void Grid<1>::moveParticles(Particle<1>* pList, int NParticles){
         pList[i].position += pList[i].velocity * dt;
         if(pList[i].position > rBound) 
             pList[i].position = lBound + (pList[i].position-rBound);
-        
+        if(pList[i].position < lBound)
+            pList[i].position = rBound + (lBound - pList[i].position);
     }
+    timestep++;
 }
 
 void Grid<1>::Initialize(Particle<1>* pList, const int NParticles){

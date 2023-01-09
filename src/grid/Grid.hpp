@@ -44,8 +44,7 @@ template<> class Grid<1>{
     double* phi;
     int* ipiv;
     std::string boundaryCondition;
-
-    
+    long int timestep;
 };
 
 

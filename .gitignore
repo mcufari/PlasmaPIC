@@ -7,3 +7,5 @@ test
 .vscode/*.json
 .vscode
 *.txt
+dumps
+dumps/*

@@ -31,11 +31,11 @@ void Grid<1>::particleInitStaticProtonPair(Particle<1>* pList, const int NParts)
         exit(1);
     }
     for(int i = 0; i < NParts/2; i++){
-        pList[i] = Particle<1>(-1,lBound + dx + ((rBound-dx) - (lBound + dx))*((double)rand())/RAND_MAX, 0, 1);
+        pList[i] = Particle<1>(-1,lBound + dx + ((rBound-dx) - (lBound + dx))*((double)rand())/RAND_MAX, 0, 0.0001);
         std::cout << "Placing particle at: " << pList[i].position << std::endl;
     }
     for(int i = NParts/2; i < NParts; i++){
-        pList[i] = Particle<1>(1, lBound + dx + ((rBound-dx) - (lBound + dx))*((double)rand())/RAND_MAX, 0 ,1);
+        pList[i] = Particle<1>(1, lBound + dx + ((rBound-dx) - (lBound + dx))*((double)rand())/RAND_MAX, 0 ,0.0001);
         std::cout << "Placing particle at: " << pList[i].position << std::endl;
     }
     
