@@ -91,9 +91,17 @@ boundaryCondition(boundCondition)
 void Grid<1>::vertexInfoTraverse(){
     std::cout << "gridPosits " << "chargeDensity " << "EFieldValues" << std::endl;
     for(int i = 0; i < NP; i++){
-        std::cout << gridLocations[i];
-        std::cout << chargeDensity[i];
+        std::cout << gridLocations[i] << " ";
+        std::cout << chargeDensity[i] << " ";
         std::cout << EfieldValues[i] << std::endl;
+    }
+}
+
+void Grid<1>::particleInfoTraverse(Particle<1>* pList, int NParticles){
+    std::cout << "posits " << "vels " << std::endl;
+    for(int i = 0; i < NParticles; i++){
+        std::cout << pList[i].position << " ";
+        std::cout << pList[i].velocity << std::endl;
     }
 }
 
