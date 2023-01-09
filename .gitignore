@@ -2,3 +2,6 @@
 plasma
 *.out
 testLapack.cc
+test
+.vscode/settings.json
+.vscode
