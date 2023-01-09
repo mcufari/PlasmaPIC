@@ -187,7 +187,7 @@ void Grid<1>::moveParticles(Particle<1>* pList, int NParticles){
         if(pList[i].position > rBound) 
             pList[i].position = lBound + (pList[i].position-rBound);
         if(pList[i].position < lBound)
-            pList[i].position = rBound + (lBound - pList[i].position);
+            pList[i].position = rBound - (lBound - pList[i].position);
     }
     timestep++;
 }
