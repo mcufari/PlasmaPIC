@@ -89,11 +89,11 @@ boundaryCondition(boundCondition)
 }
 
 void Grid<1>::vertexInfoTraverse(){
+    std::cout << "gridPosits " << "chargeDensity " << "EFieldValues" << std::endl;
     for(int i = 0; i < NP; i++){
-        std::cout << "Pos " << i << " is: "<< gridLocations[i] << std::endl;
-        std::cout << "effectiveCharge " << i << " is: " << chargeDensity[i] << std::endl;
-        std::cout << "EField " << i << " is: " << EfieldValues[i] << std::endl;
-
+        std::cout << gridLocations[i];
+        std::cout << chargeDensity[i];
+        std::cout << EfieldValues[i] << std::endl;
     }
 }
 
@@ -102,7 +102,7 @@ void Grid<1>::poissonSolver(){
     double* density = (double*) malloc(sizeof(double) * NP);
     for(int i = 0; i < NP; i++){
         density[i] = -1*chargeDensity[i] * dx * dx;
-        std::cout << "Density vector at " << i << " is: " << density[i] << std::endl;
+        //std::cout << "Density vector at " << i << " is: " << density[i] << std::endl;
     }
    
     int info = 0;
@@ -111,10 +111,6 @@ void Grid<1>::poissonSolver(){
 
     
     dgetrs(&trans,&NP,&nrhs,poissonMatrix,&NP,ipiv,density,&NP,&info);
-
-    for(int i = 0; i < NP; i++){
-        std::cout << "Phi at " << i << " is: " << density[i] << std::endl;
-    }
     
     for(int i = 1; i < NP-1; i++){
         EfieldValues[i] = (density[i-1] - density[i+1])/(2.0*dx);
