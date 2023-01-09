@@ -14,15 +14,17 @@ int main(){
     //Dump closing remarks
     //End
     const int Nparticles = 1;
-    const int tMax = 0.1;
+    const double tMax = 0.1;
     Grid<1> g(11, 0.1, 0);
     
     Particle<1>* pList = (Particle<1>*) malloc(sizeof(Particle<1>) * Nparticles);
     
     g.Initialize(pList, Nparticles);
-    
-    for(int j = 0; j < tMax; j+= g.dt){
+    std::cout << "Time stepping at: " << g.dt << std::endl;
+    double t = 0;
+    while(t < tMax){
         g.IntegrationLoop(pList, Nparticles);
+        t+= g.dt;
     }
     
     

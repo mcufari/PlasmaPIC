@@ -57,7 +57,7 @@ boundaryCondition(boundCondition)
     EfieldValues = (double*) calloc(NP, sizeof(double));
     BfieldValues = (double*) calloc(NP, sizeof(double));
     chargeDensity = (double*) calloc(NP, sizeof(double));
-
+    dt = 0.1*dx;
     for(int i = 0; i < NPoints; i++){
         gridLocations[i] = (lBound + i*dx);
         EfieldValues[i] = 0;  
@@ -170,6 +170,7 @@ void Grid<1>::Initialize(Particle<1>* pList, const int NParticles){
 
 
 void Grid<1>::IntegrationLoop(Particle<1>* pList, const int NParticles){
+        
         updateVelocities(pList,NParticles);
 
         moveParticles(pList, NParticles);
