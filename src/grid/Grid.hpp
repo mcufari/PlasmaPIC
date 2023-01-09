@@ -1,9 +1,7 @@
 #ifndef GRID_HEADER
 #define GRID_HEADER
-#include "GridVertex.hpp"
 #include <iostream>
 #include <string>
-#include <unordered_map>
 #include "mkl.h"
 template<int dim = 0>
 class Grid{
@@ -20,7 +18,12 @@ template<> class Grid<1>{
   
     void vertexInfoTraverse();
     void poissonSolver();
-    std::unordered_map<int, GridVertex<1>*> indexVertexMap;
+    void getInitialVelocities(Particle<1>* pList);
+    
+    double* gridLocations;
+    double* EfieldValues;
+    double* BfieldValues;
+    double* chargeDensity;    
 
     int NP;
     double dx;

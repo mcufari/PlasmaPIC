@@ -13,7 +13,7 @@ int main(){
     //Dump info
     //Dump closing remarks
     //End
-    const int Nparticles = 1000;
+    const int Nparticles = 1;
     Grid<1> g(101, 0.01, 0);
     
     Particle<1>* pList = (Particle<1>*) malloc(sizeof(Particle<1>) * Nparticles);
@@ -25,5 +25,5 @@ int main(){
     g.poissonSolver();
 
     g.vertexInfoTraverse();
-    
+
 }

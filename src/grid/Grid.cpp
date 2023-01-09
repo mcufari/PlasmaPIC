@@ -8,10 +8,16 @@ See grid.hpp for documentation
 Grid<1>::Grid(int NPoints, double dx, double lBoundary) : NP(NPoints), dx(dx), lBound(lBoundary){
     rBound = lBound + (NPoints-1)*dx; //1 point is used at each boundary
     boundaryCondition = "Periodic"; //Only boundary condition permitted at present in periodic
+    gridLocations = (double*) calloc(NP, sizeof(double));
+    EfieldValues = (double*) calloc(NP, sizeof(double));
+    BfieldValues = (double*) calloc(NP, sizeof(double));
+    chargeDensity = (double*) calloc(NP, sizeof(double));
 
     for(int i = 0; i < NPoints; i++){
-        GridVertex<1>* GV = new GridVertex<1>(lBound + i*dx); //Create a new grid vertex object 
-        indexVertexMap[i] = GV;  //Insert this object into lookup table
+        gridLocations[i] = (lBound + i*dx);
+        EfieldValues[i] = 0;  
+        BfieldValues[i] = 0;
+        chargeDensity[i] = 0;
     }
 
     poissonMatrix = (double*) calloc(NPoints*NPoints, sizeof(double));
@@ -51,11 +57,18 @@ lBound(lBoundary),
 boundaryCondition(boundCondition) 
 {
     rBound = lBound + (NPoints - 1) * dx;
+    gridLocations = (double*) calloc(NP, sizeof(double));
+    EfieldValues = (double*) calloc(NP, sizeof(double));
+    BfieldValues = (double*) calloc(NP, sizeof(double));
+    chargeDensity = (double*) calloc(NP, sizeof(double));
+
     for(int i = 0; i < NPoints; i++){
-        GridVertex<1>* GV = new GridVertex<1>(lBound + i*dx);
-        indexVertexMap[i] = GV; 
+        gridLocations[i] = (lBound + i*dx);
+        EfieldValues[i] = 0;  
+        BfieldValues[i] = 0;
+        chargeDensity[i] = 0;
     }
-    
+
     poissonMatrix = (double*) calloc(NPoints*NPoints, sizeof(double));
     for(int i = 1; i < NPoints-1; i++){
         poissonMatrix[i*NPoints + i] = -2;
@@ -86,9 +99,9 @@ boundaryCondition(boundCondition)
 
 void Grid<1>::vertexInfoTraverse(){
     for(int i = 0; i < NP; i++){
-        std::cout << "Pos " << i << " is: "<< indexVertexMap[i]->position << std::endl;
-        std::cout << "effectiveCharge " << i << " is: " << indexVertexMap[i]->effectiveCharge << std::endl;
-        std::cout << "EField " << i << " is: " << indexVertexMap[i]->Efield << std::endl;
+        std::cout << "Pos " << i << " is: "<< gridLocations[i] << std::endl;
+        std::cout << "effectiveCharge " << i << " is: " << chargeDensity[i] << std::endl;
+        std::cout << "EField " << i << " is: " << EfieldValues[i] << std::endl;
 
     }
 }
@@ -97,7 +110,7 @@ void Grid<1>::poissonSolver(){
     const char trans = 'T';
     double* density = (double*) malloc(sizeof(double) * NP);
     for(int i = 0; i < NP; i++){
-        density[i] = -1*indexVertexMap[i]->effectiveCharge * dx * dx;
+        density[i] = -1*chargeDensity[i] * dx * dx;
         std::cout << "Density vector at " << i << " is: " << density[i] << std::endl;
     }
    
@@ -111,11 +124,11 @@ void Grid<1>::poissonSolver(){
     for(int i = 0; i < NP; i++){
         std::cout << "Phi at " << i << " is: " << density[i] << std::endl;
     }
-    free(density);
+    
     for(int i = 1; i < NP-1; i++){
-        indexVertexMap[i]->Efield = (density[i-1] - density[i+1])/(2.0*dx);
+        EfieldValues[i] = (density[i-1] - density[i+1])/(2.0*dx);
     }
-    indexVertexMap[0]->Efield = (density[NP-1] - density[1])/(2.0*dx);
-    indexVertexMap[NP-1]->Efield = (density[NP-2] - density[0])/(2.0*dx);
-
+    EfieldValues[0] = (density[NP-1] - density[1])/(2.0*dx);
+    EfieldValues[NP-1] = (density[NP-2] - density[0])/(2.0*dx);
+    free(density);
 }

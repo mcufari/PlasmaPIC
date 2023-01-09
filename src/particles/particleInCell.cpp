@@ -6,7 +6,7 @@ void particleInCell(const Particle<1>* pList, const int NParts, Grid<1> grid){
     for(int i = 0; i < NParts; i++){
         int lIndex = floor((pList[i].position - grid.lBound)/grid.dx);
         int rIndex = (lIndex + 1) % grid.NP;
-        pList[i].cloudInCell(grid.indexVertexMap[lIndex],grid.indexVertexMap[rIndex],grid.dx);
+        pList[i].cloudInCell(&grid.chargeDensity[lIndex],&grid.chargeDensity[rIndex],&grid.gridLocations[lIndex],&grid.gridLocations[rIndex],grid.dx);
     }
 
 }
