@@ -20,7 +20,12 @@ template<> class Grid<1>{
     void vertexInfoTraverse();
     void poissonSolver();
     void getInitialVelocities(Particle<1>* pList, int NParticles);
-
+    void updateVelocities(Particle<1>* pList, int NParticles);
+    void moveParticles(Particle<1>* pList, int NParticles);
+    void particleInCell(const Particle<1>* pList, const int NParts);
+    void particleInitRandomStaticProton(Particle<1>* pList, const int NParts) const;
+    void IntegrationLoop(Particle<1>* pList, const int NParts);
+    void Initialize(Particle<1>* pList, const int NParts);
     double* gridLocations;
     double* EfieldValues;
     double* BfieldValues;

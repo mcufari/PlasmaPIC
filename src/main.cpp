@@ -14,16 +14,16 @@ int main(){
     //Dump closing remarks
     //End
     const int Nparticles = 1;
-    Grid<1> g(101, 0.01, 0);
+    const int tMax = 0.1;
+    Grid<1> g(11, 0.1, 0);
     
     Particle<1>* pList = (Particle<1>*) malloc(sizeof(Particle<1>) * Nparticles);
     
-    particleInitRandomStaticProton(pList, Nparticles, g);
+    g.Initialize(pList, Nparticles);
     
-    particleInCell(pList, Nparticles, g);
-
-    g.poissonSolver();
-
-    g.vertexInfoTraverse();
-
+    for(int j = 0; j < tMax; j+= g.dt){
+        g.IntegrationLoop(pList, Nparticles);
+    }
+    
+    
 }

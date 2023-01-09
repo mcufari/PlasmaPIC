@@ -29,11 +29,11 @@ Grid<1>::Grid(int NPoints, double dx, double lBoundary) : NP(NPoints), dx(dx), l
     }
     poissonMatrix[0] = -2;
     poissonMatrix[1] = 1;
-  
+    poissonMatrix[NPoints - 1] = -1;
 
     poissonMatrix[(NPoints*NPoints)-1] = -2;
     poissonMatrix[(NPoints*NPoints)-2] = 1;
-   
+    poissonMatrix[(NPoints-1)*NPoints] = -1;
     
     ipiv = (int*) calloc(NPoints, sizeof(int));
     int info = 0;
@@ -73,21 +73,16 @@ boundaryCondition(boundCondition)
     }
     poissonMatrix[0] = -2;
     poissonMatrix[1] = 1;
-   
+    poissonMatrix[NPoints - 1] = -1;
 
     poissonMatrix[(NPoints*NPoints)-1] = -2;
     poissonMatrix[(NPoints*NPoints)-2] = 1;
-   
+    poissonMatrix[(NPoints-1)*NPoints] = -1;
     
     ipiv = (int*) calloc(NPoints, sizeof(int));
     int info = 0;
     int nrhs = 1;
-    for(int i = 0; i < NP; i++){
-        for(int j = 0; j < NP; j++){
-            std::cout << poissonMatrix[i*NP + j] << " ";
-        }
-        std::cout << std::endl;
-    }
+   
     
      dgetrf(&NP,&NP,poissonMatrix,&NP,ipiv,&info);
 
@@ -130,11 +125,58 @@ void Grid<1>::poissonSolver(){
 }
 
 void Grid<1>::getInitialVelocities(Particle<1>* pList, int NParticles){
-    for(int i = 1; i < NParticles-1; i++){
+    for(int i = 0; i < NParticles; i++){
         int lIndex = floor((pList[i].position - lBound)/dx);
         int rIndex = (lIndex + 1) % NP;
         double effectiveEfield = EfieldValues[lIndex] * (gridLocations[rIndex] - pList[i].position)/dx + 
                                  EfieldValues[rIndex] * (pList[i].position - gridLocations[lIndex])/dx;
         pList[i].velocity -= (pList[i].charge / pList[i].mass) * effectiveEfield * (dt/2.0);
+        std::cout << "Particle " << i << " velocity at -dt/2: " << pList[i].velocity << std::endl; 
     }
+}
+
+void Grid<1>::updateVelocities(Particle<1>* pList, int NParticles){
+    for(int i = 0; i < NParticles; i++){
+        int lIndex = floor((pList[i].position-lBound)/dx);
+        int rIndex = (lIndex + 1) % NP;
+        double effectiveEfield = EfieldValues[lIndex] * (gridLocations[rIndex] - pList[i].position)/dx + 
+                                 EfieldValues[rIndex] * (pList[i].position - gridLocations[lIndex])/dx;
+        pList[i].velocity += (pList[i].charge/pList[i].mass) * effectiveEfield * (dt/2.0);
+        //Rotate velocities
+        pList[i].velocity += (pList[i].charge/pList[i].mass) * effectiveEfield * (dt/2.0);
+    }
+}
+
+void Grid<1>::moveParticles(Particle<1>* pList, int NParticles){
+    for(int i = 0; i < NParticles; i++){
+        pList[i].position += pList[i].velocity * dt;
+        if(pList[i].position > rBound) 
+            pList[i].position = lBound + (pList[i].position-rBound);
+        
+    }
+}
+
+void Grid<1>::Initialize(Particle<1>* pList, const int NParticles){
+    particleInitRandomStaticProton(pList, NParticles);
+    
+    particleInCell(pList, NParticles);
+
+    poissonSolver();
+
+    vertexInfoTraverse();
+
+    getInitialVelocities(pList, NParticles);
+}
+
+
+void Grid<1>::IntegrationLoop(Particle<1>* pList, const int NParticles){
+        updateVelocities(pList,NParticles);
+
+        moveParticles(pList, NParticles);
+
+        particleInCell(pList, NParticles);
+
+        poissonSolver();
+
+        vertexInfoTraverse();
 }
