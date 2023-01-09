@@ -27,6 +27,7 @@ template<> class Grid<1>{
     void IntegrationLoop(Particle<1>* pList, const int NParts);
     void Initialize(Particle<1>* pList, const int NParts);
     void particleInfoTraverse(Particle<1>* pList, int NParticles);
+    void particleInitStaticProtonPair(Particle<1>* pList, const int NParts);
     double* gridLocations;
     double* EfieldValues;
     double* BfieldValues;

@@ -161,7 +161,7 @@ void Grid<1>::moveParticles(Particle<1>* pList, int NParticles){
 }
 
 void Grid<1>::Initialize(Particle<1>* pList, const int NParticles){
-    particleInitRandomStaticProton(pList, NParticles);
+    particleInitStaticProtonPair(pList, NParticles);
     
     particleInCell(pList, NParticles);
 
@@ -184,4 +184,6 @@ void Grid<1>::IntegrationLoop(Particle<1>* pList, const int NParticles){
         poissonSolver();
 
         vertexInfoTraverse();
+
+        particleInfoTraverse(pList, NParticles);
 }

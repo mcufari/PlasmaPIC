@@ -24,3 +24,8 @@ void Grid<1>::particleInitRandomStaticProton(Particle<1>* pList, const int NPart
         std::cout << "Placing particle at: " << pList[i].position << std::endl;
     }
 }
+
+void Grid<1>::particleInitStaticProtonPair(Particle<1>* pList, const int NParts){
+    pList[0] = Particle<1>(1, 0.125, 0, 1);
+    pList[1] = Particle<1>(1, 0.175, 0, 1);
+}
