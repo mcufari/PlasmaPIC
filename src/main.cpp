@@ -13,11 +13,16 @@ int main(){
     //Dump info
     //Dump closing remarks
     //End
-    const int Nparticles = 10;
-    Grid<1> g(10, 5, 0);
-    g.vertexInfoTraverse();
+    const int Nparticles = 1;
+    Grid<1> g(101, 0.01, 0);
+    
     Particle<1>* pList = (Particle<1>*) malloc(sizeof(Particle<1>) * Nparticles);
+    
     particleInitRandomStaticProton(pList, Nparticles, g);
+    
     particleInCell(pList, Nparticles, g);
+
+    g.poissonSolver();
+
     g.vertexInfoTraverse();
 }
