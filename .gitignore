@@ -6,3 +6,4 @@ test
 .vscode/settings.json
 .vscode/*.json
 .vscode
+*.txt

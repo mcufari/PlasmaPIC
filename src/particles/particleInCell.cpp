@@ -26,6 +26,18 @@ void Grid<1>::particleInitRandomStaticProton(Particle<1>* pList, const int NPart
 }
 
 void Grid<1>::particleInitStaticProtonPair(Particle<1>* pList, const int NParts){
-    pList[0] = Particle<1>(1, 0.125, 0, 1);
-    pList[1] = Particle<1>(1, 0.175, 0, 1);
+    if(NParts % 2 == 1){
+        std::cout << "Error, nparts must be an even number" << std::endl;
+        exit(1);
+    }
+    for(int i = 0; i < NParts/2; i++){
+        pList[i] = Particle<1>(-1,lBound + dx + ((rBound-dx) - (lBound + dx))*((double)rand())/RAND_MAX, 0, 1);
+        std::cout << "Placing particle at: " << pList[i].position << std::endl;
+    }
+    for(int i = NParts/2; i < NParts; i++){
+        pList[i] = Particle<1>(1, lBound + dx + ((rBound-dx) - (lBound + dx))*((double)rand())/RAND_MAX, 0 ,1);
+        std::cout << "Placing particle at: " << pList[i].position << std::endl;
+    }
+    
+
 }

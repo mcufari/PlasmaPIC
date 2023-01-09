@@ -2,8 +2,10 @@
 #define GRID_HEADER
 #include <iostream>
 #include <string>
+#include <fstream>
 #include "../particles/Particle.hpp"
 #include "mkl.h"
+
 template<int dim = 0>
 class Grid{
 public:
@@ -39,6 +41,7 @@ template<> class Grid<1>{
     double rBound;
     double dt;
     double* poissonMatrix;
+    double* phi;
     int* ipiv;
     std::string boundaryCondition;
 
