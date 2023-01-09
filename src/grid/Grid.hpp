@@ -2,6 +2,7 @@
 #define GRID_HEADER
 #include <iostream>
 #include <string>
+#include "../particles/Particle.hpp"
 #include "mkl.h"
 template<int dim = 0>
 class Grid{
@@ -18,8 +19,8 @@ template<> class Grid<1>{
   
     void vertexInfoTraverse();
     void poissonSolver();
-    void getInitialVelocities(Particle<1>* pList);
-    
+    void getInitialVelocities(Particle<1>* pList, int NParticles);
+
     double* gridLocations;
     double* EfieldValues;
     double* BfieldValues;
@@ -29,6 +30,7 @@ template<> class Grid<1>{
     double dx;
     double lBound;
     double rBound;
+    double dt;
     double* poissonMatrix;
     int* ipiv;
     std::string boundaryCondition;

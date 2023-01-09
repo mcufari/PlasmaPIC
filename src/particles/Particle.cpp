@@ -1,9 +1,10 @@
 #include "Particle.hpp"
 
-Particle<1>::Particle(double ch, double pos, double vel): 
+Particle<1>::Particle(double ch, double pos, double vel, double mass): 
     charge(ch), 
     position(pos),
-    velocity(vel)
+    velocity(vel),
+    mass(mass)
 {}
 
 void Particle<1>::cloudInCell(double* lhCharge, double* rhCharge, double* lhs, double* rhs, const double dx) const {

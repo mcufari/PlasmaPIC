@@ -4,6 +4,7 @@ See grid.hpp for documentation
 */
 
 #include "Grid.hpp"
+#include <math.h>
 
 Grid<1>::Grid(int NPoints, double dx, double lBoundary) : NP(NPoints), dx(dx), lBound(lBoundary){
     rBound = lBound + (NPoints-1)*dx; //1 point is used at each boundary
@@ -12,7 +13,7 @@ Grid<1>::Grid(int NPoints, double dx, double lBoundary) : NP(NPoints), dx(dx), l
     EfieldValues = (double*) calloc(NP, sizeof(double));
     BfieldValues = (double*) calloc(NP, sizeof(double));
     chargeDensity = (double*) calloc(NP, sizeof(double));
-
+    dt = 0.1 * dx;
     for(int i = 0; i < NPoints; i++){
         gridLocations[i] = (lBound + i*dx);
         EfieldValues[i] = 0;  
@@ -37,12 +38,7 @@ Grid<1>::Grid(int NPoints, double dx, double lBoundary) : NP(NPoints), dx(dx), l
     ipiv = (int*) calloc(NPoints, sizeof(int));
     int info = 0;
     int nrhs = 1;
-    for(int i = 0; i < NP; i++){
-        for(int j = 0; j < NP; j++){
-            std::cout << poissonMatrix[i*NP + j] << " ";
-        }
-        std::cout << std::endl;
-    }
+    
     dgetrf(&NP,&NP,poissonMatrix,&NP,ipiv,&info);
     
 
@@ -131,4 +127,14 @@ void Grid<1>::poissonSolver(){
     EfieldValues[0] = (density[NP-1] - density[1])/(2.0*dx);
     EfieldValues[NP-1] = (density[NP-2] - density[0])/(2.0*dx);
     free(density);
+}
+
+void Grid<1>::getInitialVelocities(Particle<1>* pList, int NParticles){
+    for(int i = 1; i < NParticles-1; i++){
+        int lIndex = floor((pList[i].position - lBound)/dx);
+        int rIndex = (lIndex + 1) % NP;
+        double effectiveEfield = EfieldValues[lIndex] * (gridLocations[rIndex] - pList[i].position)/dx + 
+                                 EfieldValues[rIndex] * (pList[i].position - gridLocations[lIndex])/dx;
+        pList[i].velocity -= (pList[i].charge / pList[i].mass) * effectiveEfield * (dt/2.0);
+    }
 }

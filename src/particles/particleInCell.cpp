@@ -13,8 +13,10 @@ void particleInCell(const Particle<1>* pList, const int NParts, Grid<1> grid){
 
 void particleInitRandomStaticProton(Particle<1>* pList, const int NParts, const Grid<1> grid){
     for(int i = 0; i < NParts; i++){
-        pList[i].charge = 1;
+        pList[i] = Particle<1>(1,0,0,1);
+   
         pList[i].velocity = 0;
+      
         pList[i].position = ((double) rand())/(double) RAND_MAX * (grid.rBound - grid.lBound) + grid.lBound;
         std::cout << "Placing particle at: " << pList[i].position << std::endl;
     }
