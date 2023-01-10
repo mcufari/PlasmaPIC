@@ -16,12 +16,12 @@ void Grid<1>::particleInCell(const Particle<1>* pList, const int NParts) {
 
 void Grid<1>::particleInitRandomStaticProton(Particle<1>* pList, const int NParts) const {
     for(int i = 0; i < NParts; i++){
-        pList[i] = Particle<1>(1,.15,0,1);
+        pList[i] = Particle<1>(1,0.15,0,0.0001);
    
         pList[i].velocity = 0;
       
-        //pList[i].position = ((double) rand())/(double) RAND_MAX * (grid.rBound - grid.lBound) + grid.lBound;
-        std::cout << "Placing particle at: " << pList[i].position << std::endl;
+        //pList[i].position = ((double) rand())/(double) RAND_MAX * (rBound - lBound) + lBound;
+        //std::cout << "Placing particle at: " << pList[i].position << std::endl;
     }
 }
 
@@ -32,12 +32,21 @@ void Grid<1>::particleInitStaticProtonPair(Particle<1>* pList, const int NParts)
     }
     for(int i = 0; i < NParts/2; i++){
         pList[i] = Particle<1>(-1,lBound + dx + ((rBound-dx) - (lBound + dx))*((double)rand())/RAND_MAX, 0, 0.0001);
-        std::cout << "Placing particle at: " << pList[i].position << std::endl;
+        //std::cout << "Placing particle at: " << pList[i].position << std::endl;
     }
     for(int i = NParts/2; i < NParts; i++){
         pList[i] = Particle<1>(1, lBound + dx + ((rBound-dx) - (lBound + dx))*((double)rand())/RAND_MAX, 0 ,0.0001);
-        std::cout << "Placing particle at: " << pList[i].position << std::endl;
+        //std::cout << "Placing particle at: " << pList[i].position << std::endl;
     }
     
 
+}
+
+void Grid<1>::particleInitUniformProtonElectronPairs(Particle<1>* pList, const int NParts){
+    for(int i = 0; i < NParts; i+=2){
+        pList[i] = Particle<1>(-1, lBound + dx + ((rBound-dx) - (lBound + dx)) * i / NParts, 0, 0.0001);
+    }
+    for(int i = 1; i < NParts; i += 2){
+        pList[i] = Particle<1>(1, lBound + dx + ((rBound-dx) - (lBound + dx)) * i / NParts, 0, 0.01);
+    }
 }

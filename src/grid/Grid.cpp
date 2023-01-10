@@ -15,7 +15,7 @@ Grid<1>::Grid(int NPoints, double dx, double lBoundary) : NP(NPoints), dx(dx), l
     chargeDensity = (double*) calloc(NP, sizeof(double));
     timestep = 0;
     phi = (double*) calloc(NP, sizeof(double));
-    dt = 0.1 * dx;
+    dt = 0.001;
     for(int i = 0; i < NPoints; i++){
         gridLocations[i] = (lBound + i*dx);
         EfieldValues[i] = 0;  
@@ -36,12 +36,7 @@ Grid<1>::Grid(int NPoints, double dx, double lBoundary) : NP(NPoints), dx(dx), l
     poissonMatrix[((NPoints-2)*(NPoints-2))-1] = -2;
     poissonMatrix[((NPoints-2)*(NPoints-2))-2] = 1;
     
-    for(int i = 0; i < NPoints - 2; i++){
-        for(int j = 0; j < NPoints - 2;j++){
-            std::cout << poissonMatrix[i*(NPoints-2) + j] << " ";
-        }
-        std::cout << std::endl;
-    }
+
     ipiv = (int*) calloc(NPoints-2, sizeof(int));
     int info = 0;
     int nrhs = 1;
@@ -87,12 +82,7 @@ boundaryCondition(boundCondition)
     poissonMatrix[((NPoints-2)*(NPoints-2))-1] = -2;
     poissonMatrix[((NPoints-2)*(NPoints-2))-2] = 1;
     
-    for(int i = 0; i < NPoints - 2; i++){
-        for(int j = 0; j < NPoints - 2;j++){
-            std::cout << poissonMatrix[i*(NPoints-2) + j] << " ";
-        }
-        std::cout << std::endl;
-    }
+
     ipiv = (int*) calloc(NPoints-2, sizeof(int));
     int info = 0;
     int nrhs = 1;
@@ -193,7 +183,8 @@ void Grid<1>::moveParticles(Particle<1>* pList, int NParticles){
 }
 
 void Grid<1>::Initialize(Particle<1>* pList, const int NParticles){
-    particleInitStaticProtonPair(pList, NParticles);
+    
+    particleInitUniformProtonElectronPairs(pList, NParticles);
     
     particleInCell(pList, NParticles);
 

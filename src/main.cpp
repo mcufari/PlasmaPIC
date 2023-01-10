@@ -13,9 +13,9 @@ int main(){
     //Dump info
     //Dump closing remarks
     //End
-    const int Nparticles = 100;
-    const double tMax = 0.1;
-    Grid<1> g(101, 0.01, 0);
+    const int Nparticles = 1000;
+    const double tMax = 1;
+    Grid<1> g(11, 0.1, 0);
     
     Particle<1>* pList = (Particle<1>*) malloc(sizeof(Particle<1>) * Nparticles);
     

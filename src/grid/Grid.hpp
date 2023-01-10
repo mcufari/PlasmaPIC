@@ -30,6 +30,7 @@ template<> class Grid<1>{
     void Initialize(Particle<1>* pList, const int NParts);
     void particleInfoTraverse(Particle<1>* pList, int NParticles);
     void particleInitStaticProtonPair(Particle<1>* pList, const int NParts);
+    void particleInitUniformProtonElectronPairs(Particle<1>* pList, const int NParts);
     double* gridLocations;
     double* EfieldValues;
     double* BfieldValues;
