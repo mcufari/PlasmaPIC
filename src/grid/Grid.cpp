@@ -23,26 +23,23 @@ Grid<1>::Grid(int NPoints, double dx, double lBoundary) : NP(NPoints), dx(dx), l
         chargeDensity[i] = 0;
     }
 
-    poissonMatrix = (double*) calloc((NPoints-2)*(NPoints-2), sizeof(double));
-    for(int i = 1; i < NPoints-3; i++){
-        poissonMatrix[i*(NPoints-2) + i] = -2;
-        poissonMatrix[i*(NPoints-2) + i+1] = 1;
-        poissonMatrix[i*(NPoints-2) + i-1] = 1;
+    poissonDiagonal = (double*) calloc((NPoints-2), sizeof(double));
+    poissonUpDiagonal = (double*) calloc((NPoints-3), sizeof(double));
+    poissonLDiagonal = (double*) calloc(NPoints - 3, sizeof(double));
+    for(int i = 0; i < NPoints-3; i++){
+        poissonDiagonal[i] = -2;
+        poissonUpDiagonal[i] = 1;
+        poissonLDiagonal[i] = 1;
     }
-    poissonMatrix[0] = -2;
-    poissonMatrix[1] = 1;
+    poissonDiagonal[(NPoints - 2)-1] = -2;
     
-
-    poissonMatrix[((NPoints-2)*(NPoints-2))-1] = -2;
-    poissonMatrix[((NPoints-2)*(NPoints-2))-2] = 1;
-    
-
-    ipiv = (int*) calloc(NPoints-2, sizeof(int));
     int info = 0;
-    int nrhs = 1;
-    int NPl2 = NP-2;
-    dgetrf(&NPl2,&NPl2,poissonMatrix,&NPl2,ipiv,&info);
-    
+   
+    MKL_INT NPl2 = NP-2;
+
+    //dgetrf(&NPl2,&NPl2,poissonMatrix,&NPl2,ipiv,&info);
+    ddttrfb(&NPl2, poissonLDiagonal,poissonDiagonal,poissonLDiagonal,&info);
+
 
 }
 
@@ -69,31 +66,28 @@ boundaryCondition(boundCondition)
         chargeDensity[i] = 0;
     }
 
-    poissonMatrix = (double*) calloc((NPoints-2)*(NPoints-2), sizeof(double));
-    for(int i = 1; i < NPoints-3; i++){
-        poissonMatrix[i*(NPoints-2) + i] = -2;
-        poissonMatrix[i*(NPoints-2) + i+1] = 1;
-        poissonMatrix[i*(NPoints-2) + i-1] = 1;
+    poissonDiagonal = (double*) calloc((NPoints-2), sizeof(double));
+    poissonUpDiagonal = (double*) calloc((NPoints-3), sizeof(double));
+    poissonLDiagonal = (double*) calloc(NPoints - 3, sizeof(double));
+    for(int i = 0; i < NPoints-3; i++){
+        poissonDiagonal[i] = -2;
+        poissonUpDiagonal[i] = 1;
+        poissonLDiagonal[i] = 1;
     }
-    poissonMatrix[0] = -2;
-    poissonMatrix[1] = 1;
+    poissonDiagonal[(NPoints - 2)-1] = -2;
     
-
-    poissonMatrix[((NPoints-2)*(NPoints-2))-1] = -2;
-    poissonMatrix[((NPoints-2)*(NPoints-2))-2] = 1;
-    
-
-    ipiv = (int*) calloc(NPoints-2, sizeof(int));
     int info = 0;
-    int nrhs = 1;
-    int NPl2 = NP-2;
-    dgetrf(&NPl2,&NPl2,poissonMatrix,&NPl2,ipiv,&info);
+   
+    MKL_INT NPl2 = NP-2;
+
+    //dgetrf(&NPl2,&NPl2,poissonMatrix,&NPl2,ipiv,&info);
+    ddttrfb(&NPl2, poissonLDiagonal,poissonDiagonal,poissonLDiagonal,&info);
 
 }
 
 void Grid<1>::vertexInfoTraverse(){
     std::ofstream ofile;
-    std::string filename = "dumps/gridQuants" + std::to_string(timestep) + ".txt";
+    std::string filename = "dumps/gridQuants" + std::to_string(dump) + ".txt";
     ofile.open(filename);
     ofile << "gridPosits " << "chargeDensity " << "EFieldValues "  << "phi" << std::endl;
     for(int i = 0; i < NP; i++){
@@ -107,7 +101,7 @@ void Grid<1>::vertexInfoTraverse(){
 
 void Grid<1>::particleInfoTraverse(Particle<1>* pList, int NParticles){
     std::ofstream ofile;
-    std::string filename = "dumps/particleProps" + std::to_string(timestep) + ".txt";
+    std::string filename = "dumps/particleProps" + std::to_string(dump) + ".txt";
     ofile.open(filename);
     ofile << "posits " << "vels " << std::endl;
     for(int i = 0; i < NParticles; i++){
@@ -118,7 +112,7 @@ void Grid<1>::particleInfoTraverse(Particle<1>* pList, int NParticles){
 }
 
 void Grid<1>::poissonSolver(){
-    const char trans = 'T';
+    const char trans = 'N';
     double* density = (double*) malloc(sizeof(double) * (NP-2));
     for(int i = 0; i < NP-2; i++){
         density[i] = -1*chargeDensity[i+1] * dx * dx;
@@ -126,11 +120,11 @@ void Grid<1>::poissonSolver(){
     }
    
     int info = 0;
-    int nrhs = 1;
-    int NPl2 = NP-2;
+    MKL_INT nrhs = 1;
+    MKL_INT NPl2 = NP-2;
 
     
-    dgetrs(&trans,&NPl2,&nrhs,poissonMatrix,&NPl2,ipiv,density,&NPl2,&info);
+    ddttrsb(&trans,&NPl2,&nrhs,poissonLDiagonal,poissonDiagonal,poissonUpDiagonal,density,&NPl2,&info);
     
     
     phi[0] = 0;
@@ -193,6 +187,10 @@ void Grid<1>::Initialize(Particle<1>* pList, const int NParticles){
     vertexInfoTraverse();
 
     getInitialVelocities(pList, NParticles);
+
+    particleInfoTraverse(pList, NParticles);
+
+
 }
 
 
@@ -206,7 +204,9 @@ void Grid<1>::IntegrationLoop(Particle<1>* pList, const int NParticles){
 
         poissonSolver();
 
-        vertexInfoTraverse();
-
-        particleInfoTraverse(pList, NParticles);
+        if(timestep % timeStepRate == 0){
+            vertexInfoTraverse();
+            particleInfoTraverse(pList, NParticles);
+            dump++;
+        }
 }

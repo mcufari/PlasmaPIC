@@ -41,11 +41,15 @@ template<> class Grid<1>{
     double lBound;
     double rBound;
     double dt;
-    double* poissonMatrix;
+    double* poissonDiagonal;
+    double* poissonUpDiagonal;
+    double* poissonLDiagonal;
     double* phi;
     int* ipiv;
     std::string boundaryCondition;
     long int timestep;
+    int timeStepRate = 5;
+    int dump = 0;
 };
 
 
