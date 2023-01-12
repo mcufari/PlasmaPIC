@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <chrono>
 #include "../particles/Particle.hpp"
 #include "mkl.h"
 
@@ -31,9 +32,17 @@ template<> class Grid<1>{
     void particleInfoTraverse(Particle<1>* pList, int NParticles);
     void particleInitStaticProtonPair(Particle<1>* pList, const int NParts);
     void particleInitUniformProtonElectronPairs(Particle<1>* pList, const int NParts);
+    void particleInitSinusoidElectrons(Particle<1>* pList, const int NParts);
+
+    double* jValues;
     double* gridLocations;
     double* EfieldValues;
+    double* EFieldY;
+    double* EFieldZ;
+
     double* BfieldValues;
+    double* BfieldY;
+    double* BfieldZ;
     double* chargeDensity;    
 
     int NP;
@@ -48,8 +57,9 @@ template<> class Grid<1>{
     int* ipiv;
     std::string boundaryCondition;
     long int timestep;
-    int timeStepRate = 5;
-    int dump = 0;
+    int timeStepRate = 50;
+    int dump = 1;
+    double time = 0.0;
 };
 
 
