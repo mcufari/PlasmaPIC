@@ -13,6 +13,17 @@ void Grid<1>::particleInCell(const Particle<1>* pList, const int NParts) {
     }
 }
 
+void Grid<1>::currentInCell(const Particle<1>* pList, const int NParts, double* currentList){
+    double rdx = 1.0/dx;
+    for(int i = 0; i < NParts; i++){
+        int lhs = pList[i].lIndex ;
+        int rhs = pList[i].rIndex;
+        std::cout << "rhs: " << rhs << std::endl;
+        std::cout << "lhs: " << lhs << std::endl;
+        pList[i].currentCloudInCell(&currentList[lhs], &currentList[rhs], lhs*dx, rhs*dx, rdx);
+    }
+}
+
 void Grid<1>::particleInitRandomStaticProton(Particle<1>* pList, const int NParts) const {
     for(int i = 0; i < NParts; i++){
         pList[i] = Particle<1>(1,0.15,0,0.01);
@@ -47,7 +58,7 @@ void Grid<1>::particleInitStaticProtonPair(Particle<1>* pList, const int NParts)
 
 void Grid<1>::particleInitUniformProtonElectronPairs(Particle<1>* pList, const int NParts){
     for(int i = 0; i < NParts; i+=2){
-        pList[i] = Particle<1>(-1, (double) (i+1) /(NParts+4) + dx/0.1, 0, 0.01);
+        pList[i] = Particle<1>(-1, (double) (i+1) /(NParts+1), 0, 0.01);
         pList[i].lIndex = pList[i].position / dx;
         pList[i].rIndex = (pList[i].lIndex + 1) % NP;
     }

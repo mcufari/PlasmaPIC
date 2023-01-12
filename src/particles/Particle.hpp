@@ -14,9 +14,10 @@ public:
     Particle(double ch, double pos, double vel, double mass);
     Particle(const Particle<1>& prhs);
     void cloudInCell(double* lhCharge, double* rhCharge, double lhs, double rhs, const double rdx) const;
-    
+    void currentCloudInCell(double* lhCurrent, double* rhCurrent, double lhs, double rhs, const double rdx) const;
     double charge;
     double position;
+    
     double oldPosition;
     double velocity;
     double mass;

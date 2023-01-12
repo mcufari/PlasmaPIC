@@ -18,14 +18,18 @@ template<> class Grid<1>{
     public:
     Grid(int NPoints, double dx, double lBoundary);
  
-    Grid(int NPoints, double dx, double lBoundary, std::string boundCondition);
+    //Grid(int NPoints, double dx, double lBoundary, std::string boundCondition);
   
     void vertexInfoTraverse();
     void poissonSolver();
+    void EYBZSolver();
+
     void getInitialVelocities(Particle<1>* pList, int NParticles);
     void updateVelocities(Particle<1>* pList, int NParticles);
     void moveParticles(Particle<1>* pList, int NParticles);
     void particleInCell(const Particle<1>* pList, const int NParts);
+    void currentInCell(const Particle<1>* pList, const int NParts, double* currentList);
+
     void particleInitRandomStaticProton(Particle<1>* pList, const int NParts) const;
     void IntegrationLoop(Particle<1>* pList, const int NParts);
     void Initialize(Particle<1>* pList, const int NParts);
@@ -34,15 +38,21 @@ template<> class Grid<1>{
     void particleInitUniformProtonElectronPairs(Particle<1>* pList, const int NParts);
     void particleInitSinusoidElectrons(Particle<1>* pList, const int NParts);
 
-    double* jValues;
+    double* jyUpValues;
+    double* jyDownValues;
+    // double* jzUpValues;
+    // double* jzDownValues;
+
+    double* fzUpValues;
+    double* fzDownValues;
     double* gridLocations;
     double* EfieldValues;
     double* EFieldY;
     double* EFieldZ;
 
     double* BfieldValues;
-    double* BfieldY;
-    double* BfieldZ;
+    double* BFieldY;
+    double* BFieldZ;
     double* chargeDensity;    
 
     int NP;
