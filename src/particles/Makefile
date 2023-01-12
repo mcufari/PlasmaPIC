@@ -1,5 +1,5 @@
 CXX = icc
-CXXFLAGS = -g -qmkl
+CXXFLAGS = -g -qmkl -fopenmp -O3 -march=core-avx2
 
 Particle.o : Particle.cpp Particle.hpp
 	$(CXX) -o $@ Particle.cpp $(CXXFLAGS) 
