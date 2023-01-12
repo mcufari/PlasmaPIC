@@ -4,6 +4,7 @@ See grid.hpp for documentation
 */
 
 #include "Grid.hpp"
+#include "omp.h"
 #include <math.h>
 
 Grid<1>::Grid(int NPoints, double dx, double lBoundary) : NP(NPoints), dx(dx), lBound(lBoundary){
@@ -11,11 +12,16 @@ Grid<1>::Grid(int NPoints, double dx, double lBoundary) : NP(NPoints), dx(dx), l
     boundaryCondition = "Periodic"; //Only boundary condition permitted at present in periodic
     gridLocations = (double*) calloc(NP, sizeof(double));
     EfieldValues = (double*) calloc(NP, sizeof(double));
-    BfieldValues = (double*) calloc(NP, sizeof(double));
+    
+    BfieldY = (double*) calloc(NP, sizeof(double));
+    BfieldZ = (double*) calloc(NP, sizeof(double));
+
     chargeDensity = (double*) calloc(NP, sizeof(double));
+    jValues = (double*) calloc(NP, sizeof(double));
+
     timestep = 0;
     phi = (double*) calloc(NP, sizeof(double));
-    dt = 0.001;
+    dt = dx;
     for(int i = 0; i < NPoints; i++){
         gridLocations[i] = (lBound + i*dx);
         EfieldValues[i] = 0;  
@@ -144,36 +150,54 @@ void Grid<1>::poissonSolver(){
 }
 
 void Grid<1>::getInitialVelocities(Particle<1>* pList, int NParticles){
+    double rdx = 1.0/dx;
+    
+#pragma omp parallel for default(none) shared(rdx, pList, NParticles), schedule(static) num_threads(4)
     for(int i = 0; i < NParticles; i++){
-        int lIndex = floor((pList[i].position - lBound)/dx);
-        int rIndex = (lIndex + 1) % NP;
-        double effectiveEfield = EfieldValues[lIndex] * (gridLocations[rIndex] - pList[i].position)/dx + 
-                                 EfieldValues[rIndex] * (pList[i].position - gridLocations[lIndex])/dx;
-        pList[i].velocity -= (pList[i].charge / pList[i].mass) * effectiveEfield * (dt/2.0);
+        int lIndex = pList[i].lIndex;
+        int rIndex = pList[i].rIndex;
+        
+        double effectiveEfield = EfieldValues[lIndex] * ((dx*rIndex)- pList[i].position) * rdx + 
+                                EfieldValues[rIndex] * (pList[i].position - (dx*lIndex)) * rdx;
+        pList[i].velocity -= pList[i].qmRatio * effectiveEfield * (dt/2.0);
     }
 }
 
 void Grid<1>::updateVelocities(Particle<1>* pList, int NParticles){
+   
+    double rdx = 1.0/dx;
+    
+#pragma omp parallel for default(none) shared(rdx, pList, NParticles), schedule(static) num_threads(4)
     for(int i = 0; i < NParticles; i++){
-        int lIndex = floor((pList[i].position-lBound)/dx);
-        int rIndex = (lIndex + 1) % NP;
-        double effectiveEfield = EfieldValues[lIndex] * (gridLocations[rIndex] - pList[i].position)/dx + 
-                                 EfieldValues[rIndex] * (pList[i].position - gridLocations[lIndex])/dx;
-        pList[i].velocity += (pList[i].charge/pList[i].mass) * effectiveEfield * (dt/2.0);
-        //Rotate velocities
-        pList[i].velocity += (pList[i].charge/pList[i].mass) * effectiveEfield * (dt/2.0);
+        int lIndex = pList[i].lIndex;
+        int rIndex = pList[i].rIndex;
+        double effectiveEfield = EfieldValues[lIndex] * ((dx*rIndex)- pList[i].position) * rdx + 
+                                EfieldValues[rIndex] * (pList[i].position - (dx*lIndex)) * rdx;
+        pList[i].velocity += pList[i].qmRatio * effectiveEfield * (dt);
     }
+        //rotate velocities
+        
 }
 
 void Grid<1>::moveParticles(Particle<1>* pList, int NParticles){
+    double rdx = 1.0/dx;
+#pragma omp parallel for default(none) shared(NParticles, pList, rdx) schedule(static) num_threads(4)
     for(int i = 0; i < NParticles; i++){
         pList[i].position += pList[i].velocity * dt;
         if(pList[i].position > rBound) 
             pList[i].position = lBound + (pList[i].position-rBound);
         if(pList[i].position < lBound)
             pList[i].position = rBound - (lBound - pList[i].position);
+        
+        pList[i].lIndex = ((double) pList[i].position-lBound) * rdx;
+        pList[i].rIndex = (pList[i].lIndex + 1);
+
+        if(pList[i].rIndex > NP-1){
+            pList[i].rIndex = 0;
+        }
     }
     timestep++;
+    time += dt;
 }
 
 void Grid<1>::Initialize(Particle<1>* pList, const int NParticles){
@@ -181,8 +205,12 @@ void Grid<1>::Initialize(Particle<1>* pList, const int NParticles){
     particleInitUniformProtonElectronPairs(pList, NParticles);
     
     particleInCell(pList, NParticles);
-
+    
+    auto tStart = std::chrono::high_resolution_clock::now();
     poissonSolver();
+    auto tEnd = std::chrono::high_resolution_clock::now();
+    auto tTime =  std::chrono::duration_cast<std::chrono::duration<double>>(tEnd - tStart);
+    std::cout << "Poisson Solver took: " << tTime.count() << std::endl;
 
     vertexInfoTraverse();
 
@@ -190,23 +218,37 @@ void Grid<1>::Initialize(Particle<1>* pList, const int NParticles){
 
     particleInfoTraverse(pList, NParticles);
 
+    dump++;
 
 }
 
 
 void Grid<1>::IntegrationLoop(Particle<1>* pList, const int NParticles){
-        
+        auto loopStart = std::chrono::high_resolution_clock::now();
         updateVelocities(pList,NParticles);
-
+        auto velUpdate = std::chrono::high_resolution_clock::now();
         moveParticles(pList, NParticles);
-
+        auto moveUpdate = std::chrono::high_resolution_clock::now();
         particleInCell(pList, NParticles);
-
+        auto pInCell = std::chrono::high_resolution_clock::now();
+        //auto tStart = std::chrono::high_resolution_clock::now();
         poissonSolver();
+        //auto tEnd = std::chrono::high_resolution_clock::now();
+        //auto tTime =  std::chrono::duration_cast<std::chrono::duration<double>>(tEnd - tStart);
+        //std::cout << "Poisson Solver took: " << tTime.count() << std::endl;
+
 
         if(timestep % timeStepRate == 0){
             vertexInfoTraverse();
             particleInfoTraverse(pList, NParticles);
             dump++;
         }
+        auto loopEnd = std::chrono::high_resolution_clock::now();
+        std::cout << "Int loop: " << 
+                std::chrono::duration_cast<std::chrono::duration<double>>(loopEnd-loopStart).count() << "\t";
+        std::cout << "velUp: " << std::chrono::duration_cast<std::chrono::duration<double>>(velUpdate-loopStart).count()<< "\t";
+        std::cout << "posUp: " << std::chrono::duration_cast<std::chrono::duration<double>>(moveUpdate-velUpdate).count() << "\t";
+        std::cout << "pInCell: " << std::chrono::duration_cast<std::chrono::duration<double>>(pInCell - moveUpdate).count() << "\t";
+        std::cout << "poisson: " << std::chrono::duration_cast<std::chrono::duration<double>>(loopEnd - pInCell).count() << "\t";
+        std::cout << "time: " << time << std::endl;
 }
