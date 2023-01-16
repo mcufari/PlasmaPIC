@@ -6,6 +6,7 @@
 #include <chrono>
 #include "../particles/Particle.hpp"
 #include "mkl.h"
+#include <immintrin.h>
 
 template<int dim = 0>
 class Grid{
@@ -24,19 +25,19 @@ template<> class Grid<1>{
     void poissonSolver();
     void EYBZSolver();
 
-    void getInitialVelocities(Particle<1>* pList, int NParticles);
-    void updateVelocities(Particle<1>* pList, int NParticles);
-    void moveParticles(Particle<1>* pList, int NParticles);
-    void particleInCell(const Particle<1>* pList, const int NParts);
-    void currentInCell(const Particle<1>* pList, const int NParts, double* currentList);
+    void getInitialVelocities(double* pList, int* iList, int NParticles);
+    void updateVelocities(double* pList, int* iList, int NParticles);
+    void moveParticles(double* pList, int* iList, int NParticles);
+    void particleInCell(double* pList, int* indexArr, const int NParts);
+    void currentInCell(double* pList, int* iList, const int NParts, double* currentList);
 
     void particleInitRandomStaticProton(Particle<1>* pList, const int NParts) const;
-    void IntegrationLoop(Particle<1>* pList, const int NParts);
-    void Initialize(Particle<1>* pList, const int NParts);
-    void particleInfoTraverse(Particle<1>* pList, int NParticles);
+    void IntegrationLoop(double* pList, int* iList, const int NParts);
+    void Initialize(double* pList, const int NParts, int* iList);
+    void particleInfoTraverse(double* pList, int* iList, int NParticles);
     void particleInitStaticProtonPair(Particle<1>* pList, const int NParts);
     void particleInitUniformProtonElectronPairs(Particle<1>* pList, const int NParts);
-    void particleInitSinusoidElectrons(Particle<1>* pList, const int NParts);
+    void particleInitSinusoidElectrons(double* pList, int* iList, const int NParts);
 
     double* jyUpValues;
     double* jyDownValues;
@@ -67,7 +68,7 @@ template<> class Grid<1>{
     int* ipiv;
     std::string boundaryCondition;
     long int timestep;
-    int timeStepRate = 50;
+    int timeStepRate = 100000;
     int dump = 1;
     double time = 0.0;
 };

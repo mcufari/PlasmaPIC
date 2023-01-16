@@ -6,7 +6,7 @@ PlasmaPIC is (planned) multidimensional, capable of simulating a wide array of p
 
 ## PIC 1-D
 
-PIC 1-D is the 1-dimensional simulation module of plasmaPIC. The 1D poisson-solver uses LAPACK to solve the system of equations from the second-order finite difference scheme, then performs finite differencing of the potential to obtain the electric field
+PIC 1-D is the 1d3v simulation module of plasmaPIC. The 1D poisson-solver uses LAPACK to solve the system of equations from the second-order finite difference scheme, then performs finite differencing of the potential to obtain the electric field. The EY and BZ field components are calculated from the Jy current density
 
 ## PIC 2-D (Not yet implemented)
 

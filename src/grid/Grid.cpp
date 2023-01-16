@@ -22,6 +22,7 @@ Grid<1>::Grid(int NPoints, double dx, double lBoundary) : NP(NPoints), dx(dx), l
     BFieldY = (double*) calloc(NP, sizeof(double));
     BFieldZ = (double*) calloc(NP, sizeof(double));
 
+
     chargeDensity = (double*) calloc(NP, sizeof(double));
     jyUpValues = (double*) calloc(NP, sizeof(double));
     jyDownValues = (double*) calloc(NP, sizeof(double));
@@ -110,26 +111,27 @@ void Grid<1>::vertexInfoTraverse(){
     std::ofstream ofile;
     std::string filename = "dumps/gridQuants" + std::to_string(dump) + ".txt";
     ofile.open(filename);
-    ofile << "gridPosits " << "chargeDensity " << "EFieldValues "  << "phi" << std::endl;
+    ofile << "gridPosits " << "chargeDensity " << "Ex Ey Ez"  << " phi " << "By " << "Bz" << std::endl;
     for(int i = 0; i < NP; i++){
         ofile << gridLocations[i] << " ";
         ofile << chargeDensity[i] << " ";
-        ofile << EfieldValues[i] << " ";
-        ofile << phi[i] << std::endl;
+        ofile << EfieldValues[i] << " " << EFieldY[i] << " " << EFieldZ[i] << " ";
+        ofile << phi[i] << " ";
+        ofile << BFieldY[i] << " " << BFieldZ[i] << std::endl;
+
     }
     ofile.close();
 }
 
-void Grid<1>::particleInfoTraverse(Particle<1>* pList, int NParticles){
+void Grid<1>::particleInfoTraverse(double* pList, int* iList, int NParticles){
     std::ofstream ofile;
     std::string filename = "dumps/particleProps" + std::to_string(dump) + ".txt";
     ofile.open(filename);
-    ofile << "posits " << "vels " <<  "lIndex " << "rIndex " << std::endl;
+    ofile << "x " << "vx vy vz" <<  "lIndex " << "rIndex " << std::endl;
     for(int i = 0; i < NParticles; i++){
-        ofile << pList[i].position << " ";
-        ofile << pList[i].velocity << " ";
-        ofile << pList[i].lIndex << " ";
-        ofile << pList[i].rIndex << std::endl;
+        ofile << pList[3*NParticles + i] << " ";
+        ofile << pList[4*NParticles+i] << " " << pList[5*NParticles + i] << " " << pList[NParticles + i]<< " ";
+        ofile << iList[i] << " " << iList[NParticles + i] << std::endl;
     }
     ofile.close();
 }
@@ -139,7 +141,6 @@ void Grid<1>::poissonSolver(){
     double* density = (double*) malloc(sizeof(double) * (NP-2));
     for(int i = 0; i < NP-2; i++){
         density[i] = -1*chargeDensity[i+1] * dx * dx;
-        //std::cout << "Density vector at " << i << " is: " << density[i] << std::endl;
     }
    
     int info = 0;
@@ -156,8 +157,8 @@ void Grid<1>::poissonSolver(){
         phi[i+1] = density[i];
     }
 
-    EfieldValues[0] = (phi[NP-1] - phi[1])/(2.0*dx);
-    EfieldValues[NP-1] = (phi[NP-2] - phi[0])/(2.0*dx);
+    EfieldValues[0] = (-1.0*phi[1])/(dx);
+    EfieldValues[NP-1] = (phi[NP-2])/(dx);
     for(int i = 1; i < NP-1; i++){
         EfieldValues[i] = (phi[i-1] - phi[i+1])/(2.0*dx);
     }
@@ -169,193 +170,277 @@ void Grid<1>::poissonSolver(){
 void Grid<1>::EYBZSolver(){
     double* fzUpValuesNew = (double*) calloc(NP,sizeof(double));
     double* fzDownValuesNew = (double*) calloc(NP, sizeof(double));
-    std::cout << "allocated fzDown new and fzupnew" << std::endl;
 
     for(int i = 1; i < NP-1; i++){
         fzUpValuesNew[i] = fzUpValues[i-1] - dt/4.0 * (jyDownValues[i-1] + jyUpValues[i]);
         fzDownValuesNew[i] = fzDownValues[i+1] - dt/4.0 * (jyDownValues[i+1] + jyUpValues[i]);
     }
-    std::cout << "finished first iter" << std::endl;
 
     fzUpValuesNew[0] = fzUpValues[NP-1] - dt/4.0 * (jyDownValues[NP-1] + jyUpValues[0]);
     fzDownValuesNew[0] = fzDownValues[1] - dt/4.0 * (jyDownValues[1] + jyDownValues[0]);
 
     fzUpValuesNew[NP-1] = fzUpValues[NP-2] - dt/4.0 * (jyDownValues[NP-2] + jyUpValues[NP-1]);
     fzDownValuesNew[NP-1] = fzDownValues[0] - dt/4.0 * (jyDownValues[0] + jyUpValues[NP-1]);
-    std::cout << "finished boundary" << std::endl;
 
     for(int i = 0; i < NP; i++){
-        std::cout << i << std::endl;
-        std::cout << "The value of EFieldY[i]: " << EFieldY[i] << std::endl;
-        std::cout << "The value of BFieldZ[i]: " << BFieldZ[i] << std::endl;
-        std::cout << "the value of fzUpValuesNew[i]: " << fzUpValuesNew[i] << std::endl;
-        std::cout << "the value of fzDownValuesNew[i]: " << fzDownValuesNew[i] << std::endl;
+       
         EFieldY[i] = fzUpValuesNew[i] + fzDownValuesNew[i];
-        std::cout << "Efield update complete" << std::endl;
         BFieldZ[i] = fzUpValuesNew[i] - fzDownValuesNew[i];
-        std::cout << "BField update complete" << std::endl;
+    
     }
-    std::cout << "Finished EField BField update" << std::endl;
+    
     memcpy(fzUpValues, fzUpValuesNew, sizeof(double)*NP);
     memcpy(fzDownValues, fzDownValuesNew, sizeof(double)*NP);
-    std::cout << "finished memcopy" << std::endl;
+   
 }
 
-void Grid<1>::getInitialVelocities(Particle<1>* pList, int NParticles){
+void Grid<1>::getInitialVelocities(double* pList, int* iList, int NParticles){
     double rdx = 1.0/dx;
     
-#pragma omp parallel for default(none) shared(rdx, pList, NParticles), schedule(static) num_threads(4)
+#pragma omp parallel for default(none) shared(rdx, pList, iList, NParticles), schedule(static) num_threads(4)
     for(int i = 0; i < NParticles; i++){
-        int lIndex = pList[i].lIndex;
-        int rIndex = pList[i].rIndex;
+        int lIndex = iList[i];
+        int rIndex = iList[NParticles + i];
         
-        double effectiveEfield = EfieldValues[lIndex] * ((dx*rIndex)- pList[i].position) * rdx + 
-                                EfieldValues[rIndex] * (pList[i].position - (dx*lIndex)) * rdx;
-        pList[i].velocity -= pList[i].qmRatio * effectiveEfield * (dt/2.0);
+        double effectiveEfield = EfieldValues[lIndex] * ((dx*rIndex)- pList[3*NParticles + i]) * rdx + 
+                                EfieldValues[rIndex] * (pList[3*NParticles + i] - (dx*lIndex)) * rdx;
+        pList[4*NParticles + i] -= pList[2 * NParticles + i] * effectiveEfield * (dt/2.0);
     }
 }
 
-void Grid<1>::updateVelocities(Particle<1>* pList, int NParticles){
-   
+void Grid<1>::updateVelocities(double* pList, int* iList, int NParticles){
     double rdx = 1.0/dx;
+    size_t i = 0;
     
-//#pragma omp parallel for default(none) shared(rdx, pList, NParticles), schedule(static) num_threads(4)
-    for(int i = 0; i < NParticles; i++){
-        int lIndex = pList[i].lIndex;
-        int rIndex = pList[i].rIndex;
-        double pos = pList[i].position;
-        double vx = pList[i].velocity;
-        double vy = pList[i].vely;
-        double vz = pList[i].velz;
+    double dtAr[4] = {dt/2.0, dt/2.0, dt/2.0, dt/2.0};
+    __m256d dt2 = _mm256_load_pd(&dtAr[0]);
+    double lw;
+    double rw;
+    double efx[4];
+    double efy[4];
+    double efz[4];
+    double hfx[4];
+    double hfy[4];
+    double hfz[4];
+    double hfsq[4];
 
-        double qPrime = pList[i].qmRatio * dt/2.0;
+    for(; i < (NParticles & (~0x3)); i+=4){
+
+        __m256d pxd = _mm256_load_pd(&pList[3*NParticles + i]);
+        __m256d vxa = _mm256_load_pd(&pList[4*NParticles + i]);
+        __m256d vya = _mm256_load_pd(&pList[5*NParticles + i]);
+        __m256d vza = _mm256_load_pd(&pList[6*NParticles + i]);
+        __m256d qPa = _mm256_load_pd(&pList[7*NParticles + i]);
+        for(int j = 0; j < 4; j++){
+            lw = iList[i+j]*dx - pList[3*NParticles + i + j];
+            rw = pList[3*NParticles +i + j] - iList[NParticles + i+j]*dx;
+            efx[j] = EfieldValues[iList[i+j]] * lw + EfieldValues[iList[NParticles+i+j]]*rw;
+            efy[j] = EFieldY[iList[i+j]] * lw + EFieldY[iList[NParticles+i+j]]*rw;
+            efz[j] = EFieldZ[iList[i+j]] * lw + EFieldZ[iList[NParticles+i+j]]*rw;
+            
+            hfy[j] = BFieldY[iList[i+j]] * lw + BFieldY[iList[NParticles+i+j]]*rw;
+            hfz[j] = BFieldZ[iList[i+j]] * lw + BFieldZ[iList[NParticles+i+j]]*rw;
+            hfsq[j] = 2.0 / (1.0 + hfy[j]*hfy[j] + hfz[j]*hfz[j]);
+        }
+       
+        qPa = _mm256_mul_pd(qPa, dt2);
+        __m256d edx = _mm256_load_pd(&efx[0]);
+        __m256d edy = _mm256_load_pd(&efy[0]);
+        __m256d edz = _mm256_load_pd(&efz[0]);
+        
+        __m256d hdy = _mm256_load_pd(&hfy[0]);
+        __m256d hdz = _mm256_load_pd(&hdz[0]);
+
+        edx = _mm256_mul_pd(edx, qPa);
+        edy = _mm256_mul_pd(edy, qPa);
+        edz = _mm256_mul_pd(edz, qPa);
+        hdy = _mm256_mul_pd(hdy, qPa);
+        hdz = _mm256_mul_pd(hdz, qPa);
+
+        __m256d udx = _mm256_add_pd(vxa, edx);
+        __m256d udy = _mm256_add_pd(vya, edy);
+        __m256d udz = _mm256_add_pd(vza, edz);
+        __m256d sdy = _mm256_load_pd(&hfsq[0]);
+        sdy = _mm256_mul_pd(sdy, hdy);
+        __m256d sdz = _mm256_load_pd(&hfsq[0]);
+        sdz = _mm256_mul_pd(sdz, hdz);
+
+        __m256d temp1 = _mm256_sub_pd(udx, edx);
+        __m256d temp2 = _mm256_mul_pd(hdy, sdy);
+        temp2 = _mm256_mul_pd(temp2, udx);
+        __m256d temp3 = _mm256_mul_pd(hdz, sdz);
+        temp3 = _mm256_mul_pd(temp3, udx);
+        __m256d temp4 = _mm256_mul_pd(sdz, udy);
+        __m256d temp5 = _mm256_mul_pd(sdy, udz);
+        temp1 = _mm256_sub_pd(temp1, temp2);
+        temp1 = _mm256_sub_pd(temp1, temp3);
+        temp1 = _mm256_add_pd(temp1, temp4);
+        temp1 = _mm256_sub_pd(temp1, temp5);
+
+        _mm256_stream_pd(&pList[4*NParticles+i],temp1);
+        temp1 = _mm256_add_pd(udy, edy);
+        temp2 = _mm256_mul_pd(sdz, udx);
+        temp3 = _mm256_mul_pd(hdz, sdz);
+        temp3 = _mm256_mul_pd(temp3, udy);
+
+        temp4 = _mm256_mul_pd(hdy, sdz);
+        temp4 = _mm256_mul_pd(temp4, udz);
+
+        temp1 = _mm256_sub_pd(temp1, temp2);
+        temp1 = _mm256_sub_pd(temp1, temp3);
+        temp1 = _mm256_add_pd(temp1, temp4);
+
+        _mm256_stream_pd(&pList[5*NParticles + i], temp1);
+
+        temp1 = _mm256_add_pd(udz, edz);
+        temp2 = _mm256_mul_pd(sdy, udx);
+        temp3 = _mm256_mul_pd(hdz, sdy);
+        temp3 = _mm256_mul_pd(temp3, udy);
+        temp4 = _mm256_mul_pd(hdy, sdy);
+        temp4 = _mm256_mul_pd(temp4, udz);
+        temp1 = _mm256_add_pd(temp1, temp2);
+        temp1 = _mm256_add_pd(temp1, temp3);
+        temp1 = _mm256_sub_pd(temp1, temp4);
+
+        _mm256_stream_pd(&pList[6*NParticles + i], temp1);
+    }
+    std::cout << "The value of i: " << i << std::endl;
+//#pragma omp parallel for default(none) shared(rdx, pList, iList, NParticles), schedule(static) num_threads(1)
+    for(; i < NParticles; i++){
+        int lIndex = iList[i];
+        int rIndex = iList[NParticles + i];
+        double pos = pList[3*NParticles + i];
+        double vx = pList[4 * NParticles + i];
+        double vy = pList[5 * NParticles + i];
+        double vz = pList[6 * NParticles + i];
+
+        double qPrime = pList[2*NParticles + i] * dt/2.0;
 
         double lweight = (dx*rIndex - pos)*rdx;
         double rweight = (pos - dx*lIndex)*rdx;
-        double Ex = EfieldValues[lIndex] * lweight  + 
-                                EfieldValues[rIndex] * rweight ;
-        double Ey = EFieldY[lIndex] * lweight  + 
-                                EFieldY[rIndex] * rweight;
-        double Ez = EFieldZ[lIndex] * lweight  + 
-                                EFieldZ[rIndex] * rweight;
+        double Ex = (EfieldValues[lIndex] * lweight  + 
+                                EfieldValues[rIndex] * rweight)*qPrime; ;
+        double Ey = (EFieldY[lIndex] * lweight  + 
+                                EFieldY[rIndex] * rweight)*qPrime;
+        double Ez = (EFieldZ[lIndex] * lweight  + 
+                                EFieldZ[rIndex] * rweight)*qPrime;
         
-        double Bx = 0;
-        double By = BFieldY[lIndex] * lweight  + BFieldY[rIndex]*rweight;
-        double Bz = BFieldZ[lIndex] * lweight + BFieldZ[rIndex] * rweight;
+        double hx = 0;
+        double hy = (BFieldY[lIndex] * lweight  + BFieldY[rIndex]*rweight)*qPrime;
+        double hz = (BFieldZ[lIndex] * lweight + BFieldZ[rIndex] * rweight)*qPrime;
 
-        double ux = vx + qPrime * Ex;
-        double uy = vy + qPrime * Ey;
-        double uz = vz + qPrime * Ez;
+        double ux = vx +  Ex;
+        double uy = vy +  Ey;
+        double uz = vz +  Ez;
 
-        double hx = qPrime * Bx;
-        double hy = qPrime * By;
-        double hz = qPrime * Bz;
+        double hSq = hy*hy + hz*hz;
+        
+        hSq = 2.0 / (1.0 + hSq);
+        double sx = 0;
+        double sy = hSq * hy;
+        double sz = hSq * hz;
 
-        double h2 = hx*hx + hy*hy + hz*hz;
-        double sx = 2.0 * hx / (1.0 + h2);
-        double sy = 2.0 * hy / (1.0 + h2);
-        double sz = 2.0 * sz / (1.0 + h2);
-
-        double uPrimeX = ux - hy*sy*ux - hz*sz*ux + hx*sy*uy + sz*uy - sy*uz + hx*sz*uz;
-        double uPrimeY = hy*sx*ux - sz*ux + uy - hx*sx*uy - hz*sz*uy + sx*uz + hy*sz*uz;
-        double uPrimeZ = hz*sx*ux + sy*ux - sx*uy + hz*sy*uy + uz - hx*sx*uz - hy*sy*uz;
-        pList[i].velocity = uPrimeX + qPrime * Ex;
-        pList[i].vely = uPrimeY + qPrime*Ey;
-        pList[i].velz = uPrimeZ + qPrime*Ez;
-
+        pList[4*NParticles + i] = ux - hy*sy*ux - hz*sz*ux + hx*sy*uy + sz*uy - sy*uz + hx*sz*uz +  Ex;
+        pList[5*NParticles + i] = hy*sx*ux - sz*ux + uy - hx*sx*uy - hz*sz*uy + sx*uz + hy*sz*uz + Ey;
+        pList[6*NParticles + i] = hz*sx*ux + sy*ux - sx*uy + hz*sy*uy + uz - hx*sx*uz - hy*sy*uz + Ez;
     }
         //rotate velocities
     
 }
 
-void Grid<1>::moveParticles(Particle<1>* pList, int NParticles){
+void Grid<1>::moveParticles(double* pList, int* iList, int NParticles){
     double rdx = 1.0/dx;
 //#pragma omp parallel for default(none) shared(NParticles, pList, rdx) schedule(static) num_threads(4)
     for(int i = 0; i < NParticles; i++){
-        pList[i].oldPosition = pList[i].position;
-        pList[i].position += pList[i].velocity * dt;
-        if(pList[i].position > rBound) 
-            pList[i].position = lBound + (pList[i].position-rBound);
-        if(pList[i].position < lBound)
-            pList[i].position = rBound - (lBound - pList[i].position);
-        
-        pList[i].lIndex = ((double) pList[i].position-lBound) * rdx;
-        pList[i].rIndex = (pList[i].lIndex + 1);
+        //pList[i].oldPosition = pList[i].position;
+        pList[3*NParticles + i] += pList[4*NParticles + i] * dt;
+        if(pList[3*NParticles + i] > rBound) 
+            pList[3*NParticles + i] = lBound + (pList[3*NParticles + i]-rBound);
+        while(pList[3*NParticles + i] < lBound){
+            pList[3*NParticles + i] = rBound - (lBound - pList[3*NParticles + i]);
+            }
+        iList[i] =(int) ( (pList[3*NParticles+i]-lBound) * rdx );
+        int rIndex = (iList[i] + 1);
 
-        if(pList[i].rIndex > NP-1){
-            pList[i].rIndex = 0;
+        if(rIndex > NP-1){
+            iList[NParticles + i] = 0;
         }
     }
     timestep++;
     time += dt;
 }
 
-void Grid<1>::Initialize(Particle<1>* pList, const int NParticles){
-    std::cout << "initalizing" << std::endl;
-    particleInitUniformProtonElectronPairs(pList, NParticles);
-    std::cout << "initalized particle locations" << std::endl;
-    particleInCell(pList, NParticles);
-    std::cout << "performed particle in cell";
+void Grid<1>::Initialize(double* pList, const int NParticles, int* iList){
+   
+    particleInitSinusoidElectrons(pList, iList, NParticles);
+    
+    particleInCell(pList, iList, NParticles);
+    
     auto tStart = std::chrono::high_resolution_clock::now();
     poissonSolver();
-    std::cout << "performed poisson solver" << std::endl;
+    
     auto tEnd = std::chrono::high_resolution_clock::now();
     auto tTime =  std::chrono::duration_cast<std::chrono::duration<double>>(tEnd - tStart);
-    std::cout << "Poisson Solver took: " << tTime.count() << std::endl;
     
-    vertexInfoTraverse();
-    std::cout << "performed vertex traverse" << std::endl;
-    getInitialVelocities(pList, NParticles);
-    std::cout << "got initial vs" << std::endl;
-    particleInfoTraverse(pList, NParticles);
-    std::cout << "got particle info" << std::endl;
+    
+    //vertexInfoTraverse();
+    
+    getInitialVelocities(pList, iList, NParticles);
+    
+    particleInfoTraverse(pList, iList, NParticles);
+    
     dump++;
 
 }
 
 
-void Grid<1>::IntegrationLoop(Particle<1>* pList, const int NParticles){
+void Grid<1>::IntegrationLoop(double* pList, int* iList, const int NParticles){
         auto loopStart = std::chrono::high_resolution_clock::now();
         //Get v(t+1/2*dt);
-        updateVelocities(pList,NParticles);
-        std::cout << "updated vels" << std::endl;
-        currentInCell(pList, NParticles, jyDownValues);
-        std::cout << "updated current in cells" << std::endl;
+        updateVelocities(pList, iList, NParticles);
         auto velUpdate = std::chrono::high_resolution_clock::now();
-        moveParticles(pList, NParticles);
-        std::cout << "particles moved" << std::endl;
+        currentInCell(pList, iList, NParticles, jyDownValues);
+        auto curOne = std::chrono::high_resolution_clock::now();
+        moveParticles(pList, iList, NParticles);
         //get x(t+dt)
         auto moveUpdate = std::chrono::high_resolution_clock::now();
-        currentInCell(pList, NParticles, jyUpValues);
-        std::cout << "current in cell calculated" << std::endl;
+        currentInCell(pList, iList, NParticles, jyUpValues);
+        auto curTwo = std::chrono::high_resolution_clock::now();
         //update currents at J(t+dt)
-        particleInCell(pList, NParticles);
-        std::cout << "particle in cell calculated" << std::endl;
-     
+        particleInCell(pList, iList, NParticles);
 
         auto pInCell = std::chrono::high_resolution_clock::now();
         //auto tStart = std::chrono::high_resolution_clock::now();
         poissonSolver();
 
-        std::cout << "particle in cell performed" << std::endl;
+        auto poissonSolved = std::chrono::high_resolution_clock::now();
+       
         EYBZSolver();
-        std::cout << "Efield solver performed" << std::endl;
+
+        auto EYBZ = std::chrono::high_resolution_clock::now();
+
         //auto tEnd = std::chrono::high_resolution_clock::now();
         //auto tTime =  std::chrono::duration_cast<std::chrono::duration<double>>(tEnd - tStart);
         //std::cout << "Poisson Solver took: " << tTime.count() << std::endl;
 
-
         if(timestep % timeStepRate == 0){
-            vertexInfoTraverse();
-            particleInfoTraverse(pList, NParticles);
+            //vertexInfoTraverse();
+            particleInfoTraverse(pList, iList, NParticles);
             dump++;
         }
+
         auto loopEnd = std::chrono::high_resolution_clock::now();
         std::cout << "Int loop: " << 
                 std::chrono::duration_cast<std::chrono::duration<double>>(loopEnd-loopStart).count() << "\t";
         std::cout << "velUp: " << std::chrono::duration_cast<std::chrono::duration<double>>(velUpdate-loopStart).count()<< "\t";
-        std::cout << "posUp: " << std::chrono::duration_cast<std::chrono::duration<double>>(moveUpdate-velUpdate).count() << "\t";
-        std::cout << "pInCell: " << std::chrono::duration_cast<std::chrono::duration<double>>(pInCell - moveUpdate).count() << "\t";
-        std::cout << "poisson: " << std::chrono::duration_cast<std::chrono::duration<double>>(loopEnd - pInCell).count() << "\t";
+        std::cout << "posUp: " << std::chrono::duration_cast<std::chrono::duration<double>>(moveUpdate-curOne).count() << "\t";
+        std::cout << "pInCell: " << std::chrono::duration_cast<std::chrono::duration<double>>(pInCell - curTwo).count() << "\t";
+        std::cout << "poisson: " << std::chrono::duration_cast<std::chrono::duration<double>>(poissonSolved - pInCell).count() << "\t";
         std::cout << "time: " << time << std::endl;
+
+        std::cout << "CurOne: " << std::chrono::duration_cast<std::chrono::duration<double>>(curOne - velUpdate).count() << "\t";
+        std::cout << "CurTwo: " << std::chrono::duration_cast<std::chrono::duration<double>>(curTwo - moveUpdate).count() << "\t";
+        std::cout << "EYBZ: " <<   std::chrono::duration_cast<std::chrono::duration<double>>(EYBZ - poissonSolved).count() << "\t";
+        std::cout << "Dump: " <<   std::chrono::duration_cast<std::chrono::duration<double>>(loopEnd - EYBZ).count() << std::endl;
+
 }

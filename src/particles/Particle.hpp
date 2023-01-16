@@ -16,12 +16,14 @@ public:
     void cloudInCell(double* lhCharge, double* rhCharge, double lhs, double rhs, const double rdx) const;
     void currentCloudInCell(double* lhCurrent, double* rhCurrent, double lhs, double rhs, const double rdx) const;
     double charge;
+    double mass;
+    double qmRatio;
+    
     double position;
     
     double oldPosition;
     double velocity;
-    double mass;
-    double qmRatio;
+    
 
     int lIndex;
     int rIndex;
